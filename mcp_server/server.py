@@ -1,8 +1,6 @@
 from fastmcp import FastMCP
 import os
 import aiosqlite  
-import tempfile
-
 
 BASE_DIR = os.path.dirname(__file__)
 DB_PATH = os.path.join(BASE_DIR, "expenses.db")
