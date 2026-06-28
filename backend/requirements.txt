@@ -20,3 +20,4 @@ httpx
 aiohttp
 
 typing-extensions
+langgraph-checkpoint-sqlite

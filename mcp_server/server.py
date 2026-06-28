@@ -54,6 +54,8 @@ async def add_expense(
     note: str = ""
 ):
     """Add a new expense."""
+    print("Tool called!")
+    print(date, amount, category, subcategory, note)
 
     try:
         async with aiosqlite.connect(DB_PATH) as conn:

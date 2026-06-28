@@ -1,7 +1,7 @@
-import UserCard from "./components/UserCard";
+import Home from "./pages/Home";
 
 function App() {
-  return <UserCard />;
+  return <Home />;
 }
 
 export default App;
