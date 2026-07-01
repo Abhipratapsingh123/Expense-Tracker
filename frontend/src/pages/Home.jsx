@@ -26,8 +26,7 @@ function Home() {
     const {
         messages,
         loading,
-        handleSend,
-        setMessages
+        handleSend
     } = useChat(
         userId,
         currentThread
@@ -37,25 +36,18 @@ function Home() {
 
         const id = crypto.randomUUID();
 
-        const newThread = {
-            id,
-            title: "New Chat"
-        };
-
         setThreads(prev => [
-            newThread,
+            {
+                id,
+                title: "New Chat"
+            },
             ...prev
         ]);
 
+        // Switch to the new thread
+        // useChat() will automatically load its history
         setCurrentThread(id);
 
-        // Clear chat window
-        setMessages([
-            {
-                role: "assistant",
-                content: "Hi! How can I help you today?"
-            }
-        ]);
     }
 
     return (

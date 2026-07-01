@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
 import uuid
+from langchain_core.messages import HumanMessage, AIMessage
+
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from langchain_core.messages import HumanMessage
 
 from mcp_client.client import get_tools
 from Agent.graph import build_graph
@@ -82,3 +83,40 @@ async def chat(request: ChatRequest):
         "thread_id": request.thread_id,
         "response": result["messages"][-1].content
     }
+
+
+@app.get("/history/{thread_id}")
+async def get_history(thread_id: str):
+
+    state = await graph.aget_state(
+        config={
+            "configurable": {
+                "thread_id": thread_id
+            }
+        }
+    )
+
+    if not state.values:
+        return {"messages": []}
+
+    messages = []
+
+    for msg in state.values["messages"]:
+
+        if isinstance(msg, HumanMessage):
+            role = "user"
+        elif isinstance(msg, AIMessage):
+            role = "assistant"
+        else:
+            continue
+
+        messages.append(
+            {
+                "role": role,
+                "content": msg.content
+            }
+        )
+
+    return {"messages": messages}
+
+

@@ -1,8 +1,6 @@
 import { useState } from "react";
 
-function InputBar({
-    onSend
-}) {
+function InputBar({ onSend }) {
 
     const [message, setMessage] = useState("");
 
@@ -18,27 +16,51 @@ function InputBar({
 
     return (
 
-        <div className="border-t p-4 flex gap-3 bg-white">
+        <div className="bg-white border-t">
 
-            <input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => {
+            <div className="max-w-4xl mx-auto p-5">
 
-                    if (e.key === "Enter")
-                        handleSend();
+                <div className="flex items-center rounded-2xl border shadow-sm px-4">
 
-                }}
-                placeholder="Ask anything..."
-                className="flex-1 border rounded-lg px-4 py-2"
-            />
+                    <input
 
-            <button
-                onClick={handleSend}
-                className="bg-blue-600 text-white px-6 rounded-lg"
-            >
-                Send
-            </button>
+                        className="flex-1 py-4 outline-none"
+
+                        placeholder="Ask anything about your expenses..."
+
+                        value={message}
+
+                        onChange={(e) =>
+                            setMessage(e.target.value)
+                        }
+
+                        onKeyDown={(e) => {
+
+                            if (e.key === "Enter") {
+
+                                handleSend();
+
+                            }
+
+                        }}
+
+                    />
+
+                    <button
+
+                        onClick={handleSend}
+
+                        className="ml-3 bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-2 rounded-xl"
+
+                    >
+
+                        Send
+
+                    </button>
+
+                </div>
+
+            </div>
 
         </div>
 

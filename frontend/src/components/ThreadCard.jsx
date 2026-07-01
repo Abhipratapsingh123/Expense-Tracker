@@ -1,30 +1,42 @@
 function ThreadCard({
+
     thread,
+
     active,
+
     onClick
+
 }) {
 
     return (
 
         <div
+
             onClick={onClick}
+
             className={`
+                mx-3
+                mb-2
+                rounded-lg
                 cursor-pointer
+                transition
                 px-4
                 py-3
-                border-b
-                border-gray-800
-                hover:bg-gray-800
 
-                ${active ? "bg-gray-800" : ""}
+                ${
+                    active
+                    ? "bg-blue-600 text-white"
+                    : "hover:bg-slate-800 text-slate-300"
+                }
             `}
+
         >
 
-            <h3 className="font-medium">
+            <p className="font-medium truncate">
 
                 {thread.title}
 
-            </h3>
+            </p>
 
         </div>
 

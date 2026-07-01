@@ -27,3 +27,16 @@ export async function sendMessage(message, userId, threadId) {
     return await response.json();
 
 }
+
+export async function getHistory(threadId) {
+
+    const response = await fetch(
+        `${BASE_URL}/history/${threadId}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to load history");
+    }
+
+    return await response.json();
+}

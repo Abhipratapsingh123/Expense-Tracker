@@ -101,6 +101,7 @@ async def list_expenses(
     """
     Retrieve all expenses between the given start and end dates.
     Returns expense ID, date, amount, category, subcategory, and note.
+    If database is empty, then say that no expenses exist.
     """
 
     try:
@@ -149,6 +150,7 @@ async def summarize(
     """
     Summarize expenses within a date range.
     Optionally filter by category to get total spending and expense count.
+    If databsase is empty, then say that no expenses exist.
     """
 
     try:
@@ -212,6 +214,7 @@ async def delete_expense(expense_id: int):
     """
     Delete an expense using its expense ID.
     Use list_expenses first if the expense ID is unknown.
+    If the database is empty, then say that no expenses exist.
     """
 
     try:
