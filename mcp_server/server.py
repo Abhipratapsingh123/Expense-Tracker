@@ -1,51 +1,42 @@
 from fastmcp import FastMCP
 import os
 import json
-import sqlite3
-# import tempfile
 import traceback
-import aiosqlite
+import asyncio
+import asyncpg
+from dotenv import load_dotenv
 
-
+load_dotenv()
 
 BASE_DIR = os.path.dirname(__file__)
-
-# Database stored in system temp directory
-DB_PATH = os.path.join(BASE_DIR, "expenses.db")
 CATEGORIES_PATH = os.path.join(BASE_DIR, "categories.json")
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 mcp = FastMCP("ExpenseTracker")
 
 
-def init_db():
+async def init_db():
+    """Create the expenses table if it does not exist."""
+
+    conn = await asyncpg.connect(DATABASE_URL)
+
     try:
-        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-
-        with sqlite3.connect(DB_PATH) as conn:
-
-            conn.execute("PRAGMA journal_mode=WAL")
-
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS expenses(
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    date TEXT NOT NULL,
-                    amount REAL NOT NULL,
-                    category TEXT NOT NULL,
-                    subcategory TEXT DEFAULT '',
-                    note TEXT DEFAULT ''
-                )
-            """)
-
-            conn.commit()
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS expenses (
+                id SERIAL PRIMARY KEY,
+                date TEXT NOT NULL,
+                amount NUMERIC(10,2) NOT NULL,
+                category TEXT NOT NULL,
+                subcategory TEXT DEFAULT '',
+                note TEXT DEFAULT ''
+            )
+        """)
 
         print("Database initialized successfully")
 
-    except Exception:
-        traceback.print_exc()
-        raise
-
-
-init_db()
+    finally:
+        await conn.close()
 
 
 @mcp.tool()
@@ -60,43 +51,40 @@ async def add_expense(
     Add a new expense to the expense tracker.
     Use the closest matching category from the available categories.
     Use subcategory for more specific details and note for any extra information.
-"""
-
-    print("Tool called!")
-    print(date, amount, category, subcategory, note)
+    """
 
     try:
 
-        async with aiosqlite.connect(DB_PATH) as conn:
+        conn = await asyncpg.connect(DATABASE_URL)
 
-            cur = await conn.execute(
+        try:
+
+            row = await conn.fetchrow(
                 """
                 INSERT INTO expenses
                 (date, amount, category, subcategory, note)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES ($1,$2,$3,$4,$5)
+                RETURNING id
                 """,
-                (
-                    date,
-                    amount,
-                    category,
-                    subcategory,
-                    note
-                )
+                date,
+                amount,
+                category,
+                subcategory,
+                note
             )
 
-            await conn.commit()
-
-            print(f"Expense saved successfully. ID = {cur.lastrowid}")
-            print(f"Database Location: {DB_PATH}")
+            print(f"Expense saved successfully. ID = {row['id']}")
 
             return {
                 "status": "success",
-                "id": cur.lastrowid,
+                "id": row["id"],
                 "message": "Expense added successfully"
             }
 
-    except Exception:
+        finally:
+            await conn.close()
 
+    except Exception:
         traceback.print_exc()
 
         return {
@@ -112,15 +100,16 @@ async def list_expenses(
 ):
     """
     Retrieve all expenses between the given start and end dates.
-
     Returns expense ID, date, amount, category, subcategory, and note.
-"""
+    """
 
     try:
 
-        async with aiosqlite.connect(DB_PATH) as conn:
+        conn = await asyncpg.connect(DATABASE_URL)
 
-            cur = await conn.execute(
+        try:
+
+            rows = await conn.fetch(
                 """
                 SELECT
                     id,
@@ -130,28 +119,19 @@ async def list_expenses(
                     subcategory,
                     note
                 FROM expenses
-                WHERE date BETWEEN ? AND ?
+                WHERE date BETWEEN $1 AND $2
                 ORDER BY date DESC, id DESC
                 """,
-                (
-                    start_date,
-                    end_date
-                )
+                start_date,
+                end_date
             )
 
-            rows = await cur.fetchall()
+            return [dict(row) for row in rows]
 
-            columns = [d[0] for d in cur.description]
-
-            await cur.close()
-
-            return [
-                dict(zip(columns, row))
-                for row in rows
-            ]
+        finally:
+            await conn.close()
 
     except Exception:
-
         traceback.print_exc()
 
         return {
@@ -168,49 +148,57 @@ async def summarize(
 ):
     """
     Summarize expenses within a date range.
-
     Optionally filter by category to get total spending and expense count.
-"""
+    """
 
     try:
 
-        async with aiosqlite.connect(DB_PATH) as conn:
+        conn = await asyncpg.connect(DATABASE_URL)
 
-            query = """
-                SELECT
-                    category,
-                    SUM(amount) AS total_amount,
-                    COUNT(*) AS count
-                FROM expenses
-                WHERE date BETWEEN ? AND ?
-            """
-
-            params = [start_date, end_date]
+        try:
 
             if category:
-                query += " AND category = ?"
-                params.append(category)
 
-            query += """
-                GROUP BY category
-                ORDER BY total_amount DESC
-            """
+                rows = await conn.fetch(
+                    """
+                    SELECT
+                        category,
+                        SUM(amount) AS total_amount,
+                        COUNT(*) AS count
+                    FROM expenses
+                    WHERE date BETWEEN $1 AND $2
+                    AND category = $3
+                    GROUP BY category
+                    ORDER BY total_amount DESC
+                    """,
+                    start_date,
+                    end_date,
+                    category
+                )
 
-            cur = await conn.execute(query, params)
+            else:
 
-            rows = await cur.fetchall()
+                rows = await conn.fetch(
+                    """
+                    SELECT
+                        category,
+                        SUM(amount) AS total_amount,
+                        COUNT(*) AS count
+                    FROM expenses
+                    WHERE date BETWEEN $1 AND $2
+                    GROUP BY category
+                    ORDER BY total_amount DESC
+                    """,
+                    start_date,
+                    end_date
+                )
 
-            columns = [d[0] for d in cur.description]
+            return [dict(row) for row in rows]
 
-            await cur.close()
-
-            return [
-                dict(zip(columns, row))
-                for row in rows
-            ]
+        finally:
+            await conn.close()
 
     except Exception:
-
         traceback.print_exc()
 
         return {
@@ -223,24 +211,26 @@ async def summarize(
 async def delete_expense(expense_id: int):
     """
     Delete an expense using its expense ID.
-
     Use list_expenses first if the expense ID is unknown.
-"""
+    """
 
     try:
 
-        async with aiosqlite.connect(DB_PATH) as conn:
+        conn = await asyncpg.connect(DATABASE_URL)
 
-            cur = await conn.execute(
-                "DELETE FROM expenses WHERE id=?",
-                (expense_id,)
+        try:
+
+            result = await conn.execute(
+                """
+                DELETE FROM expenses
+                WHERE id = $1
+                """,
+                expense_id
             )
 
-            await conn.commit()
+            deleted = int(result.split()[-1])
 
-            print(f"Deleted expense ID: {expense_id}")
-
-            if cur.rowcount == 0:
+            if deleted == 0:
                 return {
                     "status": "error",
                     "message": "Expense not found"
@@ -251,8 +241,10 @@ async def delete_expense(expense_id: int):
                 "message": "Expense deleted successfully"
             }
 
-    except Exception:
+        finally:
+            await conn.close()
 
+    except Exception:
         traceback.print_exc()
 
         return {
@@ -268,9 +260,8 @@ async def delete_expense(expense_id: int):
 def categories():
     """
     Provides the available expense categories.
-
     Use these categories when adding expenses instead of creating new ones.
-"""
+    """
 
     default_categories = {
         "categories": [
@@ -293,6 +284,7 @@ def categories():
             return f.read()
 
     except FileNotFoundError:
+
         return json.dumps(default_categories, indent=4)
 
     except Exception:
@@ -306,7 +298,10 @@ def categories():
             indent=4
         )
 
+
 if __name__ == "__main__":
+
+    asyncio.run(init_db())
 
     mcp.run(
         transport="http",

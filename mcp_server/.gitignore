@@ -1,2 +1,3 @@
 .venv
 mcp_server/.python-version
+mcp_server/.env
