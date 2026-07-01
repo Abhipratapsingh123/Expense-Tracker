@@ -1,56 +1,60 @@
 import ThreadCard from "./ThreadCard";
+import { Moon, Sun } from "lucide-react";
 
 function Sidebar({
     threads,
     currentThread,
     onSelectThread,
-    onNewChat
+    onNewChat,
+    darkMode,
+    toggleDarkMode
 }) {
 
     return (
 
-        <div className="w-72 h-screen bg-slate-900 text-white flex flex-col">
+        <div className="w-72 h-screen bg-gray-900 dark:bg-black text-white flex flex-col transition-colors duration-300">
 
-            {/* Header */}
-            <div className="p-5 border-b border-slate-700">
-
-                <h1 className="text-2xl font-bold">
-                     Smart Spend
-                </h1>
-
-                <p className="text-sm text-slate-400 mt-1">
-                    AI Expense Tracker
-                </p>
-
-            </div>
-
-            {/* New Chat */}
-
-            <div className="p-4">
+            <div className="p-4 space-y-3">
 
                 <button
-
                     onClick={onNewChat}
-
-                    className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 py-3 font-medium transition"
-
+                    className="w-full bg-blue-600 rounded-lg py-2 hover:bg-blue-700 transition"
                 >
-
                     + New Chat
-
                 </button>
 
-            </div>
+                <button
+                    onClick={toggleDarkMode}
+                    className="w-full border border-gray-700 rounded-lg py-2 hover:bg-gray-800 flex items-center justify-center gap-2 transition"
+                >
 
-            {/* Chat List */}
+                    {
 
-            <div className="px-4 pb-2">
+                        darkMode
 
-                <p className="text-xs uppercase tracking-wider text-slate-400">
+                        ?
 
-                    Chats
+                        <>
 
-                </p>
+                            <Sun size={18} />
+
+                            Light Mode
+
+                        </>
+
+                        :
+
+                        <>
+
+                            <Moon size={18} />
+
+                            Dark Mode
+
+                        </>
+
+                    }
+
+                </button>
 
             </div>
 
@@ -61,52 +65,15 @@ function Sidebar({
                     threads.map(thread => (
 
                         <ThreadCard
-
                             key={thread.id}
-
                             thread={thread}
-
                             active={thread.id === currentThread}
-
                             onClick={() => onSelectThread(thread.id)}
-
                         />
 
                     ))
 
                 }
-
-            </div>
-
-            {/* Footer */}
-
-            <div className="border-t border-slate-700 p-4">
-
-                <div className="flex items-center gap-3">
-
-                    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold">
-
-                        A
-
-                    </div>
-
-                    <div>
-
-                        <p className="font-medium">
-
-                            Abhi
-
-                        </p>
-
-                        <p className="text-xs text-slate-400">
-
-                            Expense Tracker
-
-                        </p>
-
-                    </div>
-
-                </div>
 
             </div>
 

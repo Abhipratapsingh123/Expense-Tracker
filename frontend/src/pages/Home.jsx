@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
@@ -10,18 +10,36 @@ function Home() {
 
     const userId = "user_1";
 
-    // Current active thread
-    const [currentThread, setCurrentThread] = useState(
-        crypto.randomUUID()
-    );
+    const initialThreadId = crypto.randomUUID();
 
-    // Sidebar thread list
+    const [currentThread, setCurrentThread] = useState(initialThreadId);
+
     const [threads, setThreads] = useState([
         {
-            id: currentThread,
+            id: initialThreadId,
             title: "New Chat"
         }
     ]);
+
+    const [darkMode, setDarkMode] = useState(() => {
+        return localStorage.getItem("theme") === "dark";
+    });
+
+    useEffect(() => {
+
+        if (darkMode) {
+
+            document.documentElement.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+
+        } else {
+
+            document.documentElement.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+
+        }
+
+    }, [darkMode]);
 
     const {
         messages,
@@ -29,7 +47,9 @@ function Home() {
         handleSend
     } = useChat(
         userId,
-        currentThread
+        currentThread,
+        threads,
+        setThreads
     );
 
     function createNewChat() {
@@ -44,21 +64,21 @@ function Home() {
             ...prev
         ]);
 
-        // Switch to the new thread
-        // useChat() will automatically load its history
         setCurrentThread(id);
 
     }
 
     return (
 
-        <div className="flex h-screen">
+        <div className="flex h-screen bg-gray-100 dark:bg-gray-950 transition-colors duration-300">
 
             <Sidebar
                 threads={threads}
                 currentThread={currentThread}
                 onSelectThread={setCurrentThread}
                 onNewChat={createNewChat}
+                darkMode={darkMode}
+                toggleDarkMode={() => setDarkMode(!darkMode)}
             />
 
             <div className="flex flex-col flex-1">

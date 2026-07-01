@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { sendMessage, getHistory } from "../services/api";
 
-export default function useChat(userId, threadId) {
+export default function useChat(
+    userId,
+    threadId,
+    threads,
+    setThreads
+) {
 
     const [messages, setMessages] = useState([
         {
@@ -12,7 +17,19 @@ export default function useChat(userId, threadId) {
 
     const [loading, setLoading] = useState(false);
 
-    // Load chat history whenever the thread changes
+    // Generate a better thread title
+    function generateTitle(message) {
+
+        const text = message.trim();
+
+        if (text.length <= 30) {
+            return text;
+        }
+
+        return text.substring(0, 30) + "...";
+    }
+
+    // Load history whenever the active thread changes
     useEffect(() => {
 
         async function loadHistory() {
@@ -59,12 +76,42 @@ export default function useChat(userId, threadId) {
 
         if (!userMessage.trim()) return;
 
+        // Rename only once
+        const currentThread = threads.find(
+            thread => thread.id === threadId
+        );
+
+        if (currentThread && currentThread.title === "New Chat") {
+
+            setThreads(prev =>
+
+                prev.map(thread =>
+
+                    thread.id === threadId
+
+                        ? {
+                              ...thread,
+                              title: generateTitle(userMessage)
+                          }
+
+                        : thread
+
+                )
+
+            );
+
+        }
+
+        // Add user message immediately
         const userMsg = {
             role: "user",
             content: userMessage
         };
 
-        setMessages(prev => [...prev, userMsg]);
+        setMessages(prev => [
+            ...prev,
+            userMsg
+        ]);
 
         setLoading(true);
 

@@ -1,82 +1,123 @@
 import { useEffect, useRef } from "react";
 import MessageBubble from "./MessageBubble";
 
-function ChatWindow({ messages, loading }) {
+function ChatWindow({ messages, loading, onQuickPrompt }) {
 
     const bottomRef = useRef(null);
 
-    // Auto-scroll to latest message
     useEffect(() => {
         bottomRef.current?.scrollIntoView({
             behavior: "smooth"
         });
     }, [messages, loading]);
 
+    const showWelcome =
+        messages.length === 1 &&
+        messages[0].role === "assistant";
+
     return (
 
-        <div className="flex-1 overflow-y-auto bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-8 bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
 
             {
-                messages.length === 0 && (
 
-                    <div className="h-full flex flex-col justify-center items-center text-center">
+                showWelcome && (
 
-                        <h1 className="text-4xl font-bold mb-3">
-                            💰 Expense AI
+                    <div className="flex flex-col items-center mt-16">
+
+                        <h1 className="text-6xl font-bold text-gray-900 dark:text-white transition-colors">
+
+
+                            Smart Spend
+
                         </h1>
 
-                        <p className="text-gray-500">
-                            Start tracking your expenses naturally.
+                        <p className="text-gray-500 mt-4">
+
+                            Your AI Expense Assistant
+
                         </p>
 
-                        <div className="mt-8 space-y-2 text-gray-400">
+                        <div className="grid grid-cols-2 gap-4 mt-12">
 
-                            <p>"I spent ₹250 on coffee."</p>
+                            <button
+                                onClick={() => onQuickPrompt("Add an expense")}
+                                className="bg-white border rounded-xl p-5 hover:shadow"
+                            >
+                                ➕ Add Expense
+                            </button>
 
-                            <p>"Show expenses this month."</p>
+                            <button
+                                onClick={() => onQuickPrompt("List all expenses")}
+                                className="bg-white border rounded-xl p-5 hover:shadow"
+                            >
+                                📋 List Expenses
+                            </button>
 
-                            <p>"Delete expense ID 5."</p>
+                            <button
+                                onClick={() => onQuickPrompt("Show monthly summary")}
+                                className="bg-white border rounded-xl p-5 hover:shadow"
+                            >
+                                📊 Monthly Summary
+                            </button>
+
+                            <button
+                                onClick={() => onQuickPrompt("Delete an expense")}
+                                className="bg-white border rounded-xl p-5 hover:shadow"
+                            >
+                                🗑 Delete Expense
+                            </button>
 
                         </div>
 
                     </div>
 
                 )
+
             }
 
-            <div className="max-w-4xl mx-auto px-6 py-8">
+            {
 
-                {
-                    messages.map((message, index) => (
+                !showWelcome && (
 
-                        <MessageBubble
-                            key={index}
-                            message={message}
-                        />
+                    <>
 
-                    ))
-                }
+                        {
 
-                {
-                    loading && (
+                            messages.map((message, index) => (
 
-                        <MessageBubble
+                                <MessageBubble
+                                    key={index}
+                                    message={message}
+                                />
 
-                            message={{
-                                role: "assistant",
-                                content: "Thinking..."
-                            }}
+                            ))
 
-                            typing
+                        }
 
-                        />
+                        {
 
-                    )
-                }
+                            loading && (
 
-                <div ref={bottomRef}></div>
+                                <MessageBubble
+                                    typing={true}
+                                    message={{
+                                        role: "assistant",
+                                        content: ""
+                                    }}
+                                />
 
-            </div>
+                            )
+
+                        }
+
+                    </>
+
+                )
+
+            }
+
+            <div ref={bottomRef}></div>
 
         </div>
 
